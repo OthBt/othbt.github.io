@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel da Nutricionista</title>
+  <title>Painel da Nutricionista - Cloud</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
@@ -13,462 +13,231 @@
       --verde-suave: #e8f3de; --bege: #f7f3ec; --bege-escuro: #ece5d5;
       --marrom: #5a3e26; --texto: #1e1e1e; --cinza: #6b6b6b; --branco: #ffffff;
       --vermelho: #c0392b; --azul: #2471a3; --sidebar-bg: #1e3a0f;
-      --sombra: rgba(30,58,15,0.1);
     }
-    body { font-family:'DM Sans',sans-serif; background:var(--bege); color:var(--texto); min-height:100vh; display:flex; }
+    body { font-family: 'DM Sans', sans-serif; background-color: var(--bege); color: var(--texto); display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar { width: 320px; background: var(--sidebar-bg); color: var(--branco); display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 4px 0 15px rgba(0,0,0,0.1); position: sticky; top: 0; height: 100vh; }
+    .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-header h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .patient-list { flex: 1; overflow-y: auto; padding: 1rem 0; }
+    .patient-item { padding: 1rem 1.5rem; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+    .patient-item:hover { background: rgba(255,255,255,0.08); }
+    .patient-item.active { background: var(--verde-medio); border-left: 4px solid var(--verde-claro); }
+    .patient-name { font-weight: 500; font-size: 0.95rem; display: block; margin-bottom: 0.2rem; }
+    .patient-date { font-size: 0.75rem; opacity: 0.6; }
 
-    /* SIDEBAR */
-    .sidebar {
-      width: 260px; min-height: 100vh; background: var(--sidebar-bg);
-      display: flex; flex-direction: column; padding: 2rem 1.2rem;
-      position: fixed; top:0; left:0; bottom:0; z-index:10;
-    }
-    .sidebar-logo { text-align:center; margin-bottom:2rem; }
-    .sidebar-logo .icon { font-size:2.2rem; display:block; margin-bottom:0.4rem; }
-    .sidebar-logo h2 { font-family:'Playfair Display',serif; color:#fff; font-size:1.1rem; font-weight:600; }
-    .sidebar-logo p { color:rgba(255,255,255,0.5); font-size:0.75rem; margin-top:0.2rem; }
-    .sidebar-divider { border:none; border-top:1px solid rgba(255,255,255,0.1); margin:1rem 0; }
-    .sidebar-label { font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem; padding-left:0.5rem; }
-    .sidebar-count { background:rgba(130,176,85,0.25); color:var(--verde-claro); font-size:0.72rem;
-      padding:0.15rem 0.5rem; border-radius:50px; font-weight:500; }
-    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-top:1rem; }
-    .stat-box { background:rgba(255,255,255,0.07); border-radius:10px; padding:0.8rem 0.7rem; text-align:center; }
-    .stat-box .num { font-size:1.4rem; font-weight:600; color:#fff; }
-    .stat-box .lbl { font-size:0.65rem; color:rgba(255,255,255,0.45); margin-top:0.1rem; text-transform:uppercase; letter-spacing:0.05em; }
+    /* Main Content */
+    .main-content { flex: 1; padding: 2.5rem; overflow-y: auto; }
+    .empty-state { text-align: center; margin-top: 15%; color: var(--cinza); }
+    .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--verde-escuro); margin-bottom: 1rem; }
+    
+    .detail-card { background: var(--branco); border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 2.5rem; max-width: 900px; margin: 0 auto; display: none; }
+    .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--bege); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .detail-title h2 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--verde-escuro); }
+    
+    .actions { display: flex; gap: 0.8rem; }
+    .btn { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+    .btn-pdf { background: var(--verde-escuro); color: var(--branco); }
+    .btn-pdf:hover { background: var(--verde-medio); }
+    
+    .section-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-bottom: 2rem; }
+    .info-section { background: var(--verde-suave); padding: 1.5rem; border-radius: 12px; }
+    .section-label { font-size: 0.75rem; text-transform: uppercase; color: var(--verde-medio); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.8rem; display: block; }
+    .info-row { margin-bottom: 0.6rem; font-size: 0.92rem; line-height: 1.4; }
+    .info-row strong { color: var(--marrom); width: 140px; display: inline-block; }
+    
+    .full-width { grid-column: 1 / -1; }
+    .refresh-btn { background: #fff; border: 1px solid var(--verde-claro); color: var(--verde-escuro); margin: 10px; padding: 5px; cursor: pointer; border-radius: 5px; font-size: 12px; }
 
-    /* MAIN */
-    .main { margin-left:260px; flex:1; padding:2rem 2.5rem; min-height:100vh; }
-    @media(max-width:768px){ .sidebar{display:none} .main{margin-left:0; padding:1rem} }
-
-    /* TOPBAR */
-    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
-    .topbar h1 { font-family:'Playfair Display',serif; font-size:1.6rem; color:var(--verde-escuro); }
-    .topbar p { font-size:0.83rem; color:var(--cinza); margin-top:0.2rem; }
-    .btn { font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; padding:0.55rem 1.2rem;
-      border-radius:8px; cursor:pointer; border:none; transition:all 0.18s; display:inline-flex; align-items:center; gap:0.4rem; }
-    .btn-primary { background:var(--verde-medio); color:#fff; }
-    .btn-primary:hover { background:var(--verde-escuro); }
-    .btn-outline { background:transparent; color:var(--verde-medio); border:1.5px solid var(--verde-medio); }
-    .btn-outline:hover { background:var(--verde-suave); }
-    .btn-danger { background:transparent; color:var(--vermelho); border:1.5px solid var(--vermelho); }
-    .btn-danger:hover { background:#fdecea; }
-    .btn-pdf { background:linear-gradient(135deg,#2471a3,#1a5276); color:#fff; }
-    .btn-pdf:hover { filter:brightness(1.1); }
-
-    /* SEARCH */
-    .search-bar { display:flex; gap:0.8rem; margin-bottom:1.5rem; align-items:center; }
-    .search-input { flex:1; font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:0.6rem 1rem;
-      border:1.5px solid var(--bege-escuro); border-radius:10px; background:#fff; outline:none;
-      transition:border-color 0.2s; }
-    .search-input:focus { border-color:var(--verde-claro); }
-
-    /* PATIENT LIST */
-    .patient-list { display:flex; flex-direction:column; gap:0.8rem; }
-    .patient-card {
-      background:#fff; border-radius:14px; padding:1.2rem 1.4rem;
-      box-shadow:0 2px 10px var(--sombra); border:1.5px solid transparent;
-      cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:1rem;
-    }
-    .patient-card:hover { border-color:var(--verde-claro); transform:translateY(-1px); box-shadow:0 6px 18px var(--sombra); }
-    .patient-card.selected { border-color:var(--verde-medio); background:var(--verde-suave); }
-    .avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--verde-claro),var(--verde-medio));
-      display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; color:#fff; font-weight:600; }
-    .patient-info { flex:1; min-width:0; }
-    .patient-info h3 { font-size:0.95rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .patient-info p { font-size:0.78rem; color:var(--cinza); margin-top:0.15rem; }
-    .patient-meta { display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem; flex-shrink:0; }
-    .tag { font-size:0.72rem; padding:0.2rem 0.6rem; border-radius:50px; font-weight:500; }
-    .tag-objetivo { background:#e8f5e9; color:#2e7d32; }
-    .tag-date { background:var(--bege-escuro); color:var(--cinza); }
-
-    /* EMPTY STATE */
-    .empty-state { text-align:center; padding:4rem 2rem; color:var(--cinza); }
-    .empty-state .icon { font-size:3rem; display:block; margin-bottom:1rem; opacity:0.4; }
-    .empty-state h3 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--texto); margin-bottom:0.5rem; }
-    .empty-state p { font-size:0.88rem; }
-
-    /* MODAL OVERLAY */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; align-items:center; justify-content:center; padding:1rem; }
-    .modal-overlay.open { display:flex; }
-    .modal { background:#fff; border-radius:20px; max-width:720px; width:100%; max-height:90vh; overflow-y:auto;
-      box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:modalIn 0.25s ease; }
-    @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
-    .modal-header { padding:1.8rem 2rem 1.2rem; display:flex; align-items:flex-start; justify-content:space-between;
-      border-bottom:1px solid var(--bege-escuro); position:sticky; top:0; background:#fff; border-radius:20px 20px 0 0; }
-    .modal-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--verde-escuro); }
-    .modal-header p { font-size:0.8rem; color:var(--cinza); margin-top:0.3rem; }
-    .modal-close { background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--cinza); padding:0.2rem; line-height:1; }
-    .modal-close:hover { color:var(--vermelho); }
-    .modal-body { padding:1.5rem 2rem 2rem; }
-    .modal-actions { display:flex; gap:0.7rem; flex-wrap:wrap; padding:0 2rem 1.5rem; }
-
-    /* SUMMARY SECTIONS */
-    .summary-section { margin-bottom:1.4rem; }
-    .summary-section h4 { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--marrom);
-      font-weight:600; margin-bottom:0.7rem; display:flex; align-items:center; gap:0.4rem; }
-    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
-    .summary-item { background:var(--bege); border-radius:10px; padding:0.6rem 0.8rem; }
-    .summary-item .key { font-size:0.72rem; color:var(--cinza); margin-bottom:0.2rem; }
-    .summary-item .val { font-size:0.88rem; font-weight:500; color:var(--texto); }
-    .summary-item.full { grid-column:1/-1; }
-    .tags-row { display:flex; flex-wrap:wrap; gap:0.4rem; }
-    .tag-pill { font-size:0.78rem; padding:0.25rem 0.7rem; border-radius:50px; background:var(--verde-suave); color:var(--verde-escuro); font-weight:500; }
-    .tag-pill.alert { background:#fff3e0; color:#e65100; }
-    .bmi-bar-wrap { height:8px; background:var(--bege-escuro); border-radius:50px; margin-top:0.4rem; overflow:hidden; }
-    .bmi-bar { height:100%; border-radius:50px; transition:width 0.6s ease; }
-    .divider { border:none; border-top:1px dashed var(--bege-escuro); margin:1rem 0; }
+    @media (max-width: 900px) { .sidebar { width: 240px; } .section-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <span class="icon">🌿</span>
-    <h2>NutriConsulta</h2>
-    <p>Painel da Nutricionista</p>
-  </div>
-  <hr class="sidebar-divider"/>
-  <div class="sidebar-label">Visão geral</div>
-  <div class="stats-grid">
-    <div class="stat-box"><div class="num" id="statTotal">0</div><div class="lbl">Pacientes</div></div>
-    <div class="stat-box"><div class="num" id="statHoje">0</div><div class="lbl">Hoje</div></div>
-    <div class="stat-box"><div class="num" id="statPerda">0</div><div class="lbl">Perda peso</div></div>
-    <div class="stat-box"><div class="num" id="statGanho">0</div><div class="lbl">Ganho massa</div></div>
-  </div>
-  <hr class="sidebar-divider" style="margin-top:auto"/>
-  <a href="index.html" style="display:block;text-align:center;background:rgba(130,176,85,0.2);color:var(--verde-claro);
-    font-size:0.82rem;padding:0.6rem;border-radius:10px;text-decoration:none;font-weight:500;">
-    ➕ Ver formulário do paciente
-  </a>
-</aside>
-
-<!-- MAIN -->
-<main class="main">
-  <div class="topbar">
-    <div>
-      <h1>Fichas de Pacientes</h1>
-      <p>Clique em um paciente para ver o resumo completo</p>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Meus Pacientes</h2>
+      <button class="refresh-btn" onclick="carregarDadosDaPlanilha()">🔄 Atualizar Planilha</button>
     </div>
-    <button class="btn btn-danger" onclick="clearAll()" style="font-size:0.78rem;">🗑 Limpar dados</button>
-  </div>
-
-  <div class="search-bar">
-    <input class="search-input" type="text" id="searchInput" placeholder="🔍  Buscar paciente por nome..." oninput="renderList()"/>
-  </div>
-
-  <div class="patient-list" id="patientList"></div>
-</main>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
-  <div class="modal" id="modal">
-    <div class="modal-header">
-      <div>
-        <h2 id="modalName">—</h2>
-        <p id="modalSubtitle">—</p>
+    <div class="patient-list" id="patientList">
       </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+  </aside>
+
+  <main class="main-content">
+    <div id="emptyState" class="empty-state">
+      <h3>Bem-vinda, Nutri!</h3>
+      <p>Selecione um paciente na lista ao lado para ver os detalhes da anamnese.</p>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
-      <button class="btn btn-danger" onclick="deletePatient()">🗑 Excluir ficha</button>
+
+    <div id="detailCard" class="detail-card">
+      <div class="detail-header">
+        <div class="detail-title">
+          <h2 id="det-nome">Nome do Paciente</h2>
+          <p id="det-data" style="color: var(--cinza); font-size: 0.9rem; margin-top: 0.3rem;"></p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-pdf" onclick="generatePDF()">📥 Exportar PDF</button>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="info-section">
+          <span class="section-label">Identificação</span>
+          <div class="info-row"><strong>Nascimento:</strong> <span id="det-nasc"></span></div>
+          <div class="info-row"><strong>Sexo:</strong> <span id="det-sexo"></span></div>
+          <div class="info-row"><strong>WhatsApp:</strong> <span id="det-tel"></span></div>
+          <div class="info-row"><strong>E-mail:</strong> <span id="det-email"></span></div>
+          <div class="info-row"><strong>Profissão:</strong> <span id="det-prof"></span></div>
+        </div>
+
+        <div class="info-section">
+          <span class="section-label">Medidas & IMC</span>
+          <div class="info-row"><strong>Peso Atual:</strong> <span id="det-peso"></span></div>
+          <div class="info-row"><strong>Altura:</strong> <span id="det-alt"></span></div>
+          <div class="info-row"><strong>Cintura:</strong> <span id="det-cint"></span></div>
+          <div class="info-row"><strong>IMC:</strong> <span id="det-imc"></span></div>
+        </div>
+
+        <div class="info-section full-width">
+          <span class="section-label">Objetivo</span>
+          <div class="info-row"><strong>Principal:</strong> <span id="det-obj"></span></div>
+          <div class="info-row"><strong>Detalhes:</strong> <span id="det-obj-desc"></span></div>
+        </div>
+
+        <div class="info-section">
+          <span class="section-label">Saúde</span>
+          <div class="info-row"><strong>Condições:</strong> <span id="det-cond"></span></div>
+          <div class="info-row"><strong>Medicamentos:</strong> <span id="det-med"></span></div>
+          <div class="info-row"><strong>Suplementos:</strong> <span id="det-supl"></span></div>
+        </div>
+
+        <div class="info-section">
+          <span class="section-label">Hábitos</span>
+          <div class="info-row"><strong>Água/dia:</strong> <span id="det-agua"></span></div>
+          <div class="info-row"><strong>Atividade:</strong> <span id="det-ativ"></span></div>
+          <div class="info-row"><strong>Estresse:</strong> <span id="det-estresse"></span></div>
+          <div class="info-row"><strong>Sono:</strong> <span id="det-sono"></span></div>
+        </div>
+      </div>
     </div>
-    <div class="modal-body" id="modalBody"></div>
-  </div>
-</div>
+  </main>
 
-<script>
-  let currentPatient = null;
-  let currentIndex = null;
+  <script>
+    // URL DO SEU GOOGLE APPS SCRIPT
+    const urlScript = 'COLE_AQUI_SUA_URL_DO_GOOGLE_SCRIPT';
 
-  function getPatients() { return JSON.parse(localStorage.getItem('pacientes') || '[]'); }
-  function savePatients(arr) { localStorage.setItem('pacientes', JSON.stringify(arr)); }
+    let pacientes = [];
+    let selecionado = null;
 
-  function calcAge(dob) {
-    if (!dob) return '—';
-    const today = new Date(), birth = new Date(dob);
-    let age = today.getFullYear() - birth.getFullYear();
-    if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--;
-    return age + ' anos';
-  }
-
-  function calcBMI(peso, altura) {
-    if (!peso || !altura) return null;
-    const h = altura / 100;
-    return (peso / (h * h)).toFixed(1);
-  }
-
-  function bmiCategory(bmi) {
-    if (!bmi) return '';
-    if (bmi < 18.5) return 'Abaixo do peso';
-    if (bmi < 25)   return 'Peso normal';
-    if (bmi < 30)   return 'Sobrepeso';
-    return 'Obesidade';
-  }
-
-  function bmiColor(bmi) {
-    if (!bmi) return '#ccc';
-    if (bmi < 18.5) return '#5dade2';
-    if (bmi < 25)   return '#58d68d';
-    if (bmi < 30)   return '#f39c12';
-    return '#e74c3c';
-  }
-
-  function formatDate(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-  }
-
-  function formatArr(arr) {
-    if (!arr || arr.length === 0) return '—';
-    return Array.isArray(arr) ? arr.join(', ') : arr;
-  }
-
-  function updateStats() {
-    const p = getPatients();
-    const hoje = new Date().toDateString();
-    document.getElementById('statTotal').textContent = p.length;
-    document.getElementById('statHoje').textContent  = p.filter(x => new Date(x.dataEnvio).toDateString() === hoje).length;
-    document.getElementById('statPerda').textContent = p.filter(x => x.objetivo === 'Perda de peso').length;
-    document.getElementById('statGanho').textContent = p.filter(x => x.objetivo === 'Ganho de massa').length;
-  }
-
-  function renderList() {
-    const patients = getPatients();
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const list = document.getElementById('patientList');
-    const filtered = patients.filter(p => (p.nome || '').toLowerCase().includes(query));
-
-    if (filtered.length === 0) {
-      list.innerHTML = `<div class="empty-state">
-        <span class="icon">🌿</span>
-        <h3>${patients.length === 0 ? 'Nenhuma ficha ainda' : 'Nenhum resultado'}</h3>
-        <p>${patients.length === 0 ? 'As fichas enviadas pelo formulário aparecerão aqui.' : 'Tente buscar por outro nome.'}</p>
-      </div>`;
-      return;
+    async function carregarDadosDaPlanilha() {
+      const btn = document.querySelector('.refresh-btn');
+      btn.textContent = '⌛ Carregando...';
+      try {
+        const response = await fetch(urlScript);
+        pacientes = await response.json();
+        // Inverter para mostrar os mais recentes primeiro
+        pacientes.reverse();
+        renderList();
+      } catch (e) {
+        alert("Erro ao buscar dados da planilha. Verifique a URL.");
+      } finally {
+        btn.textContent = '🔄 Atualizar Planilha';
+      }
     }
 
-    list.innerHTML = filtered.map((p, i) => {
-      const realIdx = patients.indexOf(p);
-      const initials = (p.nome || '?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
-      const bmi = calcBMI(p.peso, p.altura);
-      return `<div class="patient-card" onclick="openPatient(${realIdx})">
-        <div class="avatar">${initials}</div>
-        <div class="patient-info">
-          <h3>${p.nome || '—'}</h3>
-          <p>${calcAge(p.nascimento)} · ${p.sexo || '—'} · ${bmi ? 'IMC ' + bmi : 'Sem medidas'}</p>
-        </div>
-        <div class="patient-meta">
-          <span class="tag tag-objetivo">${p.objetivo || 'Sem objetivo'}</span>
-          <span class="tag tag-date">${formatDate(p.dataEnvio)}</span>
-        </div>
-      </div>`;
-    }).join('');
+    function renderList() {
+      const listEl = document.getElementById('patientList');
+      listEl.innerHTML = '';
+      pacientes.forEach((p, index) => {
+        const item = document.createElement('div');
+        item.className = 'patient-item' + (selecionado === index ? ' active' : '');
+        item.onclick = () => showDetail(index);
+        
+        const dataFormatada = p.dataEnvio ? new Date(p.dataEnvio).toLocaleDateString('pt-BR') : 'Sem data';
+        
+        item.innerHTML = `
+          <span class="patient-name">${p.nome}</span>
+          <span class="patient-date">${dataFormatada}</span>
+        `;
+        listEl.appendChild(item);
+      });
+    }
 
-    updateStats();
-  }
+    function showDetail(index) {
+      selecionado = index;
+      renderList();
+      const p = pacientes[index];
+      
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('detailCard').style.display = 'block';
 
-  function openPatient(idx) {
-    const patients = getPatients();
-    const p = patients[idx];
-    currentPatient = p;
-    currentIndex = idx;
+      // Preencher campos
+      document.getElementById('det-nome').textContent = p.nome;
+      document.getElementById('det-data').textContent = "Enviado em: " + (p.dataEnvio ? new Date(p.dataEnvio).toLocaleString('pt-BR') : '—');
+      document.getElementById('det-nasc').textContent = p.nascimento || '—';
+      document.getElementById('det-sexo').textContent = p.sexo || '—';
+      document.getElementById('det-tel').textContent = p.telefone || '—';
+      document.getElementById('det-email').textContent = p.email || '—';
+      document.getElementById('det-prof').textContent = p.profissao || '—';
+      document.getElementById('det-peso').textContent = p.peso ? p.peso + " kg" : '—';
+      document.getElementById('det-alt').textContent = p.altura ? p.altura + " cm" : '—';
+      document.getElementById('det-cint').textContent = p.cintura ? p.cintura + " cm" : '—';
+      document.getElementById('det-obj').textContent = p.objetivo || '—';
+      document.getElementById('det-obj-desc').textContent = p.objetivo_desc || '—';
+      document.getElementById('det-cond').textContent = p.condicao || '—';
+      document.getElementById('det-med').textContent = p.medicamentos || '—';
+      document.getElementById('det-supl').textContent = p.suplementos || '—';
+      document.getElementById('det-agua').textContent = p.agua || '—';
+      document.getElementById('det-ativ').textContent = p.atividade || '—';
+      document.getElementById('det-estresse').textContent = p.estresse ? p.estresse + "/10" : '—';
+      document.getElementById('det-sono').textContent = p.sono || '—';
 
-    const bmi = calcBMI(p.peso, p.altura);
-    const bmiCat = bmiCategory(bmi);
-    const bmiPct = bmi ? Math.min(100, ((bmi - 10) / 30) * 100) : 0;
+      // Calcular IMC
+      if(p.peso && p.altura) {
+        const altM = p.altura / 100;
+        const imc = (p.peso / (altM * altM)).toFixed(1);
+        document.getElementById('det-imc').textContent = imc;
+      } else {
+        document.getElementById('det-imc').textContent = '—';
+      }
+    }
 
-    document.getElementById('modalName').textContent = p.nome || '—';
-    document.getElementById('modalSubtitle').textContent = `Ficha enviada em ${formatDate(p.dataEnvio)} · ${calcAge(p.nascimento)} · ${p.sexo || '—'}`;
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const p = pacientes[selecionado];
+      
+      doc.setFontSize(20);
+      doc.setTextColor(45, 80, 22);
+      doc.text("Anamnese Nutricional", 20, 20);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Paciente: ${p.nome}`, 20, 35);
+      doc.text(`Data: ${p.dataEnvio}`, 20, 42);
+      
+      doc.line(20, 45, 190, 45);
+      
+      let y = 55;
+      const addLine = (label, value) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(label + ": ", 20, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(String(value || '—'), 60, y);
+        y += 8;
+      };
 
-    document.getElementById('modalBody').innerHTML = `
-      <div class="summary-section">
-        <h4>📋 Identificação</h4>
-        <div class="summary-grid">
-          <div class="summary-item"><div class="key">Nome</div><div class="val">${p.nome || '—'}</div></div>
-          <div class="summary-item"><div class="key">Nascimento</div><div class="val">${p.nascimento ? new Date(p.nascimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</div></div>
-          <div class="summary-item"><div class="key">Telefone</div><div class="val">${p.telefone || '—'}</div></div>
-          <div class="summary-item"><div class="key">E-mail</div><div class="val">${p.email || '—'}</div></div>
-          <div class="summary-item"><div class="key">Profissão</div><div class="val">${p.profissao || '—'}</div></div>
-          <div class="summary-item"><div class="key">Acomp. anterior</div><div class="val">${p.acomp_anterior || '—'}</div></div>
-        </div>
-      </div>
-      <hr class="divider"/>
+      addLine("Nascimento", p.nascimento);
+      addLine("Peso", p.peso + " kg");
+      addLine("Altura", p.altura + " cm");
+      addLine("Objetivo", p.objetivo);
+      addLine("Saúde", p.condicao);
+      
+      doc.save(`Anamnese_${p.nome.replace(/\s+/g, '_')}.pdf`);
+    }
 
-      <div class="summary-section">
-        <h4>📏 Medidas & IMC</h4>
-        <div class="summary-grid">
-          <div class="summary-item"><div class="key">Peso</div><div class="val">${p.peso ? p.peso + ' kg' : '—'}</div></div>
-          <div class="summary-item"><div class="key">Altura</div><div class="val">${p.altura ? p.altura + ' cm' : '—'}</div></div>
-          <div class="summary-item"><div class="key">Circ. abdominal</div><div class="val">${p.cintura ? p.cintura + ' cm' : '—'}</div></div>
-          <div class="summary-item">
-            <div class="key">IMC</div>
-            <div class="val" style="color:${bmiColor(bmi)}">${bmi ? bmi + ' — ' + bmiCat : '—'}</div>
-            ${bmi ? `<div class="bmi-bar-wrap"><div class="bmi-bar" style="width:${bmiPct}%;background:${bmiColor(bmi)}"></div></div>` : ''}
-          </div>
-        </div>
-      </div>
-      <hr class="divider"/>
-
-      <div class="summary-section">
-        <h4>🎯 Objetivo</h4>
-        <div class="summary-grid">
-          <div class="summary-item"><div class="key">Objetivo principal</div><div class="val">${p.objetivo || '—'}</div></div>
-          <div class="summary-item full"><div class="key">Descrição</div><div class="val">${p.objetivo_desc || '—'}</div></div>
-        </div>
-      </div>
-      <hr class="divider"/>
-
-      <div class="summary-section">
-        <h4>🩺 Saúde</h4>
-        <div class="summary-grid">
-          <div class="summary-item full">
-            <div class="key">Condições diagnosticadas</div>
-            <div class="tags-row" style="margin-top:0.4rem">
-              ${(Array.isArray(p.condicao) ? p.condicao : [p.condicao]).filter(Boolean).map(c => `<span class="tag-pill ${c !== 'Nenhuma' ? 'alert' : ''}">${c}</span>`).join('') || '<span class="tag-pill">—</span>'}
-            </div>
-          </div>
-          <div class="summary-item"><div class="key">Medicamentos</div><div class="val">${p.medicamentos || '—'}</div></div>
-          <div class="summary-item"><div class="key">Suplementos</div><div class="val">${p.suplementos || '—'}</div></div>
-        </div>
-      </div>
-      <hr class="divider"/>
-
-      <div class="summary-section">
-        <h4>🍽️ Alimentação</h4>
-        <div class="summary-grid">
-          <div class="summary-item"><div class="key">Refeições/dia</div><div class="val">${p.refeicoes || '—'}</div></div>
-          <div class="summary-item"><div class="key">Pula refeições</div><div class="val">${p.pula_refeicoes || '—'}</div></div>
-          <div class="summary-item full">
-            <div class="key">Restrições/alergias</div>
-            <div class="tags-row" style="margin-top:0.4rem">
-              ${(Array.isArray(p.restricao) ? p.restricao : [p.restricao]).filter(Boolean).map(r => `<span class="tag-pill ${r !== 'Nenhuma' ? 'alert' : ''}">${r}</span>`).join('') || '<span class="tag-pill">—</span>'}
-            </div>
-          </div>
-          <div class="summary-item full">
-            <div class="key">Padrão alimentar</div>
-            <div class="tags-row" style="margin-top:0.4rem">
-              ${(Array.isArray(p.dieta) ? p.dieta : [p.dieta]).filter(Boolean).map(d => `<span class="tag-pill">${d}</span>`).join('') || '<span class="tag-pill">—</span>'}
-            </div>
-          </div>
-          <div class="summary-item full"><div class="key">Dia típico</div><div class="val">${p.dia_tipico || '—'}</div></div>
-        </div>
-      </div>
-      <hr class="divider"/>
-
-      <div class="summary-section">
-        <h4>💧 Estilo de Vida</h4>
-        <div class="summary-grid">
-          <div class="summary-item"><div class="key">Água por dia</div><div class="val">${p.agua || '—'}</div></div>
-          <div class="summary-item"><div class="key">Atividade física</div><div class="val">${p.atividade || '—'}</div></div>
-          <div class="summary-item"><div class="key">Sono</div><div class="val">${p.sono || '—'}</div></div>
-          <div class="summary-item"><div class="key">Álcool</div><div class="val">${p.alcool || '—'}</div></div>
-          <div class="summary-item"><div class="key">Nível de estresse</div><div class="val">${p.estresse ? p.estresse + '/10' : '—'}</div></div>
-        </div>
-      </div>
-
-      ${p.obs ? `<hr class="divider"/><div class="summary-section">
-        <h4>📝 Observações</h4>
-        <div class="summary-item full"><div class="val">${p.obs}</div></div>
-      </div>` : ''}
-    `;
-
-    document.getElementById('modalOverlay').classList.add('open');
-  }
-
-  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
-  function closeModalOnBg(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
-
-  function deletePatient() {
-    if (!confirm('Excluir ficha de ' + currentPatient.nome + '?')) return;
-    const patients = getPatients();
-    patients.splice(currentIndex, 1);
-    savePatients(patients);
-    closeModal();
-    renderList();
-    updateStats();
-  }
-
-  function clearAll() {
-    if (!confirm('Apagar TODAS as fichas? Esta ação não pode ser desfeita.')) return;
-    localStorage.removeItem('pacientes');
-    renderList(); updateStats();
-  }
-
-  function exportPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const p = currentPatient;
-    const bmi = calcBMI(p.peso, p.altura);
-    let y = 20;
-
-    const addLine = (label, value, indent=false) => {
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-      doc.setTextColor(74, 124, 47);
-      doc.text((indent ? '    ' : '') + label + ':', 15, y);
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(String(value || '—'), 140);
-      doc.text(lines, indent ? 55 : 55, y);
-      y += Math.max(6, lines.length * 5.5);
-    };
-
-    const addSection = (title) => {
-      if (y > 260) { doc.addPage(); y = 20; }
-      y += 4;
-      doc.setFillColor(232, 243, 222); doc.roundedRect(12, y-4, 186, 9, 2, 2, 'F');
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 58, 15);
-      doc.text(title, 15, y + 1.5); y += 10;
-      doc.setTextColor(40, 40, 40);
-    };
-
-    // Header
-    doc.setFillColor(30, 58, 15); doc.rect(0, 0, 210, 28, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
-    doc.text('Ficha de Anamnese Nutricional', 15, 12);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(168, 201, 127);
-    doc.text('Gerado em ' + new Date().toLocaleDateString('pt-BR'), 15, 20);
-    y = 38;
-
-    addSection('IDENTIFICAÇÃO');
-    addLine('Nome', p.nome); addLine('Nascimento', p.nascimento ? new Date(p.nascimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—');
-    addLine('Idade', calcAge(p.nascimento)); addLine('Sexo', p.sexo);
-    addLine('Telefone', p.telefone); addLine('E-mail', p.email); addLine('Profissão', p.profissao);
-
-    addSection('MEDIDAS CORPORAIS');
-    addLine('Peso', p.peso ? p.peso + ' kg' : '—'); addLine('Altura', p.altura ? p.altura + ' cm' : '—');
-    addLine('Circ. Abdominal', p.cintura ? p.cintura + ' cm' : '—');
-    if (bmi) addLine('IMC calculado', bmi + ' — ' + bmiCategory(bmi));
-
-    addSection('OBJETIVO');
-    addLine('Principal', p.objetivo); addLine('Descrição', p.objetivo_desc);
-
-    addSection('HISTÓRICO DE SAÚDE');
-    addLine('Condições', formatArr(p.condicao)); addLine('Medicamentos', p.medicamentos); addLine('Suplementos', p.suplementos);
-
-    addSection('HÁBITOS ALIMENTARES');
-    addLine('Refeições/dia', p.refeicoes); addLine('Pula refeições', p.pula_refeicoes);
-    addLine('Restrições', formatArr(p.restricao)); addLine('Padrão', formatArr(p.dieta));
-    addLine('Dia típico', p.dia_tipico);
-
-    addSection('ESTILO DE VIDA');
-    addLine('Água/dia', p.agua); addLine('Atividade física', p.atividade);
-    addLine('Sono', p.sono); addLine('Álcool', p.alcool);
-    addLine('Estresse', p.estresse ? p.estresse + '/10' : '—');
-
-    if (p.obs) { addSection('OBSERVAÇÕES'); addLine('Obs.', p.obs); }
-
-    // Footer
-    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(160,160,160);
-    doc.text('Documento gerado pelo sistema NutriConsulta · Confidencial', 15, 288);
-
-    doc.save(`anamnese_${(p.nome||'paciente').replace(/\s+/g,'_')}.pdf`);
-  }
-
-  // Init
-  renderList(); updateStats();
-  window.addEventListener('storage', () => { renderList(); updateStats(); });
-</script>
+    window.onload = carregarDadosDaPlanilha;
+  </script>
 </body>
 </html>
