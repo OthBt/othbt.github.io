@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel da Nutricionista - Cloud</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde-escuro: #1e3a0f; --verde-medio: #3a6b22; --verde-claro: #82b055;
+      --verde-suave: #e8f3de; --bege: #f7f3ec; --bege-escuro: #ece5d5;
+      --marrom: #5a3e26; --texto: #1e1e1e; --cinza: #6b6b6b; --branco: #ffffff;
+      --vermelho: #c0392b; --azul: #2471a3; --sidebar-bg: #1e3a0f;
+    }
+    body { font-family: 'DM Sans', sans-serif; background-color: var(--bege); color: var(--texto); display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar { width: 320px; background: var(--sidebar-bg); color: var(--branco); display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 4px 0 15px rgba(0,0,0,0.1); position: sticky; top: 0; height: 100vh; }
+    .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-header h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .patient-list { flex: 1; overflow-y: auto; padding: 1rem 0; }
+    .patient-item { padding: 1rem 1.5rem; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+    .patient-item:hover { background: rgba(255,255,255,0.08); }
+    .patient-item.active { background: var(--verde-medio); border-left: 4px solid var(--verde-claro); }
+    .patient-name { font-weight: 500; font-size: 0.95rem; display: block; margin-bottom: 0.2rem; }
+    .patient-date { font-size: 0.75rem; opacity: 0.6; }
+
+    /* Main Content */
+    .main-content { flex: 1; padding: 2.5rem; overflow-y: auto; }
+    .empty-state { text-align: center; margin-top: 15%; color: var(--cinza); }
+    .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--verde-escuro); margin-bottom: 1rem; }
+    
+    .detail-card { background: var(--branco); border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 2.5rem; max-width: 900px; margin: 0 auto; display: none; }
+    .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--bege); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .detail-title h2 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--verde-escuro); }
+    
+    .actions { display: flex; gap: 0.8rem; }
+    .btn { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+    .btn-pdf { background: var(--verde-escuro); color: var(--branco); }
+    .btn-pdf:hover { background: var(--verde-medio); }
+    
+    .section-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-bottom: 2rem; }
+    .info-section { background: var(--verde-suave); padding: 1.5rem; border-radius: 12px; }
+    .section-label { font-size: 0.75rem; text-transform: uppercase; color: var(--verde-medio); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.8rem; display: block; }
+    .info-row { margin-bottom: 0.6rem; font-size: 0.92rem; line-height: 1.4; }
+    .info-row strong { color: var(--marrom); width: 140px; display: inline-block; }
+    
+    .full-width { grid-column: 1 / -1; }
+    .refresh-btn { background: #fff; border: 1px solid var(--verde-claro); color: var(--verde-escuro); margin: 10px; padding: 5px; cursor: pointer; border-radius: 5px; font-size: 12px; }
+
+    @media (max-width: 900px) { .sidebar { width: 240px; } .section-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Meus Pacientes</h2>
+      <button class="refresh-btn" onclick="carregarDadosDaPlanilha()">🔄 Atualizar Planilha</button>
+      <input type="text" id="searchInput" placeholder="🔍 Buscar por nome..." oninput="renderList()"
+        style="width:100%;margin-top:0.8rem;padding:0.45rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);
+        background:rgba(255,255,255,0.1);color:#fff;font-family:'DM Sans',sans-serif;font-size:0.83rem;outline:none;" />
+    </div>
+    <div class="patient-list" id="patientList">
+      </div>
+  </aside>
+
+  <main class="main-content">
+    <div id="emptyState" class="empty-state">
+      <h3>Bem-vinda, Nutri!</h3>
+      <p>Selecione um paciente na lista ao lado para ver os detalhes da anamnese.</p>
+    </div>
+
+    <div id="detailCard" class="detail-card">
+      <div class="detail-header">
+        <div class="detail-title">
+          <h2 id="det-nome">Nome do Paciente</h2>
+          <p id="det-data" style="color: var(--cinza); font-size: 0.9rem; margin-top: 0.3rem;"></p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-pdf" onclick="generatePDF()">📥 Exportar PDF</button>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="info-section">
+          <span class="section-label">Identificação</span>
+          <div class="info-row"><strong>Nascimento:</strong> <span id="det-nasc"></span></div>
+          <div class="info-row"><strong>Sexo:</strong> <span id="det-sexo"></span></div>
+          <div class="info-row"><strong>WhatsApp:</strong> <span id="det-tel"></span></div>
+          <div class="info-row"><strong>E-mail:</strong> <span id="det-email"></span></div>
+          <div class="info-row"><strong>Profissão:</strong> <span id="det-prof"></span></div>
+        </div>
+
+        <div class="info-section">
+          <span class="section-label">Medidas & IMC</span>
+          <div class="info-row"><strong>Peso Atual:</strong> <span id="det-peso"></span></div>
+          <div class="info-row"><strong>Altura:</strong> <span id="det-alt"></span></div>
+          <div class="info-row"><strong>Cintura:</strong> <span id="det-cint"></span></div>
+          <div class="info-row"><strong>IMC:</strong> <span id="det-imc"></span></div>
+        </div>
+
+        <div class="info-section full-width">
+          <span class="section-label">Objetivo</span>
+          <div class="info-row"><strong>Principal:</strong> <span id="det-obj"></span></div>
+          <div class="info-row"><strong>Detalhes:</strong> <span id="det-obj-desc"></span></div>
+        </div>
+
+        <div class="info-section">
+          <span class="section-label">Saúde</span>
+          <div class="info-row"><strong>Condições:</strong> <span id="det-cond"></span></div>
+          <div class="info-row"><strong>Medicamentos:</strong> <span id="det-med"></span></div>
+          <div class="info-row"><strong>Suplementos:</strong> <span id="det-supl"></span></div>
+        </div>
+
+        <div class="info-section">
+          <span class="section-label">Estilo de Vida</span>
+          <div class="info-row"><strong>Água/dia:</strong> <span id="det-agua"></span></div>
+          <div class="info-row"><strong>Atividade:</strong> <span id="det-ativ"></span></div>
+          <div class="info-row"><strong>Estresse:</strong> <span id="det-estresse"></span></div>
+          <div class="info-row"><strong>Sono:</strong> <span id="det-sono"></span></div>
+          <div class="info-row"><strong>Álcool:</strong> <span id="det-alcool"></span></div>
+        </div>
+
+        <div class="info-section full-width">
+          <span class="section-label">Alimentação</span>
+          <div class="info-row"><strong>Refeições/dia:</strong> <span id="det-refeicoes"></span></div>
+          <div class="info-row"><strong>Pula refeições:</strong> <span id="det-pula"></span></div>
+          <div class="info-row"><strong>Restrições/alergias:</strong> <span id="det-restricao"></span></div>
+          <div class="info-row"><strong>Padrão alimentar:</strong> <span id="det-dieta"></span></div>
+          <div class="info-row"><strong>Dia típico:</strong> <span id="det-dia-tipico"></span></div>
+        </div>
+
+        <div class="info-section full-width" id="section-obs" style="display:none;">
+          <span class="section-label">Observações</span>
+          <div class="info-row"><span id="det-obs"></span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const urlScript = 'https://script.google.com/macros/s/AKfycbwW2U_3CKRfPpfi5kWY1K2lU0LeGjjzc7zwecmQTrffSPuH36rt1UhOZrIaaanZW1gY/exec';
+
+    let pacientes = [];
+    let selecionado = null;
+
+    async function carregarDadosDaPlanilha() {
+      const btn = document.querySelector('.refresh-btn');
+      btn.textContent = '⌛ Carregando...';
+      try {
+        const response = await fetch(urlScript);
+        pacientes = await response.json();
+        // Inverter para mostrar os mais recentes primeiro
+        pacientes.reverse();
+        renderList();
+      } catch (e) {
+        alert("Erro ao buscar dados da planilha. Verifique a URL.");
+      } finally {
+        btn.textContent = '🔄 Atualizar Planilha';
+      }
+    }
+
+    function renderList() {
+      const listEl = document.getElementById('patientList');
+      const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+      const filtrados = pacientes.filter(p => (p.nome || '').toLowerCase().includes(query));
+      listEl.innerHTML = '';
+
+      if (filtrados.length === 0) {
+        listEl.innerHTML = `<div style="padding:1.5rem;text-align:center;opacity:0.5;font-size:0.83rem;">
+          ${pacientes.length === 0 ? 'Nenhuma ficha ainda.' : 'Nenhum resultado.'}
+        </div>`;
+        return;
+      }
+
+      filtrados.forEach((p) => {
+        const realIdx = pacientes.indexOf(p);
+        const item = document.createElement('div');
+        item.className = 'patient-item' + (selecionado === realIdx ? ' active' : '');
+        item.onclick = () => showDetail(realIdx);
+        const dataFormatada = p.dataEnvio ? new Date(p.dataEnvio).toLocaleDateString('pt-BR') : 'Sem data';
+        item.innerHTML = `
+          <span class="patient-name">${p.nome || '—'}</span>
+          <span class="patient-date">${dataFormatada}</span>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function showDetail(index) {
+      selecionado = index;
+      renderList();
+      const p = pacientes[index];
+      
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('detailCard').style.display = 'block';
+
+      // Preencher campos
+      document.getElementById('det-nome').textContent = p.nome;
+      document.getElementById('det-data').textContent = "Enviado em: " + (p.dataEnvio ? new Date(p.dataEnvio).toLocaleString('pt-BR') : '—');
+      document.getElementById('det-nasc').textContent = p.nascimento || '—';
+      document.getElementById('det-sexo').textContent = p.sexo || '—';
+      document.getElementById('det-tel').textContent = p.telefone || '—';
+      document.getElementById('det-email').textContent = p.email || '—';
+      document.getElementById('det-prof').textContent = p.profissao || '—';
+      document.getElementById('det-peso').textContent = p.peso ? p.peso + " kg" : '—';
+      document.getElementById('det-alt').textContent = p.altura ? p.altura + " cm" : '—';
+      document.getElementById('det-cint').textContent = p.cintura ? p.cintura + " cm" : '—';
+      document.getElementById('det-obj').textContent = p.objetivo || '—';
+      document.getElementById('det-obj-desc').textContent = p.objetivo_desc || '—';
+      document.getElementById('det-cond').textContent = p.condicao || '—';
+      document.getElementById('det-med').textContent = p.medicamentos || '—';
+      document.getElementById('det-supl').textContent = p.suplementos || '—';
+      document.getElementById('det-agua').textContent = p.agua || '—';
+      document.getElementById('det-ativ').textContent = p.atividade || '—';
+      document.getElementById('det-estresse').textContent = p.estresse ? p.estresse + "/10" : '—';
+      document.getElementById('det-sono').textContent = p.sono || '—';
+      document.getElementById('det-alcool').textContent = p.alcool || '—';
+      document.getElementById('det-refeicoes').textContent = p.refeicoes || '—';
+      document.getElementById('det-pula').textContent = p.pula_refeicoes || '—';
+      document.getElementById('det-restricao').textContent = p.restricao || '—';
+      document.getElementById('det-dieta').textContent = p.dieta || '—';
+      document.getElementById('det-dia-tipico').textContent = p.dia_tipico || '—';
+
+      // Observações: só mostra a seção se tiver conteúdo
+      const obsEl = document.getElementById('det-obs');
+      const obsSection = document.getElementById('section-obs');
+      if (p.obs) {
+        obsEl.textContent = p.obs;
+        obsSection.style.display = 'block';
+      } else {
+        obsSection.style.display = 'none';
+      }
+
+      // Calcular IMC com classificação
+      if(p.peso && p.altura) {
+        const altM = p.altura / 100;
+        const imc = (p.peso / (altM * altM)).toFixed(1);
+        let categoria = '';
+        let cor = '';
+        if      (imc < 18.5) { categoria = 'Abaixo do peso'; cor = '#2471a3'; }
+        else if (imc < 25)   { categoria = 'Peso normal';    cor = '#27ae60'; }
+        else if (imc < 30)   { categoria = 'Sobrepeso';      cor = '#e67e22'; }
+        else                 { categoria = 'Obesidade';       cor = '#c0392b'; }
+        document.getElementById('det-imc').innerHTML =
+          `<strong style="color:${cor}">${imc}</strong> <span style="font-size:0.82rem;color:${cor}">(${categoria})</span>`;
+      } else {
+        document.getElementById('det-imc').textContent = '—';
+      }
+    }
+
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const p = pacientes[selecionado];
+      let y = 0;
+
+      // Cabeçalho verde
+      doc.setFillColor(30, 58, 15);
+      doc.rect(0, 0, 210, 30, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Ficha de Anamnese Nutricional', 15, 13);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(168, 201, 127);
+      doc.text('Gerado em ' + new Date().toLocaleDateString('pt-BR') + ' · Documento confidencial', 15, 22);
+      y = 40;
+
+      // Funções auxiliares
+      const addSection = (title) => {
+        if (y > 260) { doc.addPage(); y = 15; }
+        y += 3;
+        doc.setFillColor(232, 243, 222);
+        doc.roundedRect(12, y - 4, 186, 9, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 58, 15);
+        doc.text(title, 15, y + 2);
+        y += 12;
+        doc.setTextColor(30, 30, 30);
+      };
+
+      const addField = (label, value) => {
+        if (y > 272) { doc.addPage(); y = 15; }
+        const val = String(value || '—');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(90, 62, 38);
+        doc.text(label + ':', 15, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 30, 30);
+        const lines = doc.splitTextToSize(val, 130);
+        doc.text(lines, 60, y);
+        y += Math.max(7, lines.length * 5.5);
+      };
+
+      // IMC calculado
+      let imcTexto = '—';
+      if (p.peso && p.altura) {
+        const altM = p.altura / 100;
+        const imc = (p.peso / (altM * altM)).toFixed(1);
+        const cat = imc < 18.5 ? 'Abaixo do peso' : imc < 25 ? 'Peso normal' : imc < 30 ? 'Sobrepeso' : 'Obesidade';
+        imcTexto = imc + ' — ' + cat;
+      }
+
+      addSection('IDENTIFICAÇÃO');
+      addField('Nome', p.nome);
+      addField('Nascimento', p.nascimento);
+      addField('Sexo', p.sexo);
+      addField('Telefone', p.telefone);
+      addField('E-mail', p.email);
+      addField('Profissão', p.profissao);
+
+      addSection('MEDIDAS CORPORAIS');
+      addField('Peso', p.peso ? p.peso + ' kg' : '—');
+      addField('Altura', p.altura ? p.altura + ' cm' : '—');
+      addField('Circ. abdominal', p.cintura ? p.cintura + ' cm' : '—');
+      addField('IMC', imcTexto);
+
+      addSection('OBJETIVO');
+      addField('Principal', p.objetivo);
+      addField('Descrição', p.objetivo_desc);
+
+      addSection('HISTÓRICO DE SAÚDE');
+      addField('Condições', p.condicao);
+      addField('Medicamentos', p.medicamentos);
+      addField('Suplementos', p.suplementos);
+
+      addSection('HÁBITOS ALIMENTARES');
+      addField('Refeições/dia', p.refeicoes);
+      addField('Pula refeições', p.pula_refeicoes);
+      addField('Restrições/alergias', p.restricao);
+      addField('Padrão alimentar', p.dieta);
+      addField('Dia típico', p.dia_tipico);
+
+      addSection('ESTILO DE VIDA');
+      addField('Água/dia', p.agua);
+      addField('Atividade física', p.atividade);
+      addField('Qualidade do sono', p.sono);
+      addField('Álcool', p.alcool);
+      addField('Nível de estresse', p.estresse ? p.estresse + '/10' : '—');
+
+      if (p.obs) {
+        addSection('OBSERVAÇÕES');
+        addField('Obs.', p.obs);
+      }
+
+      // Rodapé
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(180, 180, 180);
+        doc.text(`Página ${i} de ${totalPages} · NutriConsulta · Confidencial`, 15, 290);
+      }
+
+      doc.save(`Anamnese_${(p.nome || 'paciente').replace(/\s+/g, '_')}.pdf`);
+    }
+
+    window.onload = carregarDadosDaPlanilha;
+  </script>
+</body>
+</html>
