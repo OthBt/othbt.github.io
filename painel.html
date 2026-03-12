@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel da Nutricionista</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde-escuro: #1e3a0f; --verde-medio: #3a6b22; --verde-claro: #82b055;
+      --verde-suave: #e8f3de; --bege: #f7f3ec; --bege-escuro: #ece5d5;
+      --marrom: #5a3e26; --texto: #1e1e1e; --cinza: #6b6b6b; --branco: #ffffff;
+      --vermelho: #c0392b; --azul: #2471a3; --sidebar-bg: #1e3a0f;
+      --sombra: rgba(30,58,15,0.1);
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bege); color:var(--texto); min-height:100vh; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px; min-height: 100vh; background: var(--sidebar-bg);
+      display: flex; flex-direction: column; padding: 2rem 1.2rem;
+      position: fixed; top:0; left:0; bottom:0; z-index:10;
+    }
+    .sidebar-logo { text-align:center; margin-bottom:2rem; }
+    .sidebar-logo .icon { font-size:2.2rem; display:block; margin-bottom:0.4rem; }
+    .sidebar-logo h2 { font-family:'Playfair Display',serif; color:#fff; font-size:1.1rem; font-weight:600; }
+    .sidebar-logo p { color:rgba(255,255,255,0.5); font-size:0.75rem; margin-top:0.2rem; }
+    .sidebar-divider { border:none; border-top:1px solid rgba(255,255,255,0.1); margin:1rem 0; }
+    .sidebar-label { font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem; padding-left:0.5rem; }
+    .sidebar-count { background:rgba(130,176,85,0.25); color:var(--verde-claro); font-size:0.72rem;
+      padding:0.15rem 0.5rem; border-radius:50px; font-weight:500; }
+    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-top:1rem; }
+    .stat-box { background:rgba(255,255,255,0.07); border-radius:10px; padding:0.8rem 0.7rem; text-align:center; }
+    .stat-box .num { font-size:1.4rem; font-weight:600; color:#fff; }
+    .stat-box .lbl { font-size:0.65rem; color:rgba(255,255,255,0.45); margin-top:0.1rem; text-transform:uppercase; letter-spacing:0.05em; }
+
+    /* MAIN */
+    .main { margin-left:260px; flex:1; padding:2rem 2.5rem; min-height:100vh; }
+    @media(max-width:768px){ .sidebar{display:none} .main{margin-left:0; padding:1rem} }
+
+    /* TOPBAR */
+    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
+    .topbar h1 { font-family:'Playfair Display',serif; font-size:1.6rem; color:var(--verde-escuro); }
+    .topbar p { font-size:0.83rem; color:var(--cinza); margin-top:0.2rem; }
+    .btn { font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; padding:0.55rem 1.2rem;
+      border-radius:8px; cursor:pointer; border:none; transition:all 0.18s; display:inline-flex; align-items:center; gap:0.4rem; }
+    .btn-primary { background:var(--verde-medio); color:#fff; }
+    .btn-primary:hover { background:var(--verde-escuro); }
+    .btn-outline { background:transparent; color:var(--verde-medio); border:1.5px solid var(--verde-medio); }
+    .btn-outline:hover { background:var(--verde-suave); }
+    .btn-danger { background:transparent; color:var(--vermelho); border:1.5px solid var(--vermelho); }
+    .btn-danger:hover { background:#fdecea; }
+    .btn-pdf { background:linear-gradient(135deg,#2471a3,#1a5276); color:#fff; }
+    .btn-pdf:hover { filter:brightness(1.1); }
+
+    /* SEARCH */
+    .search-bar { display:flex; gap:0.8rem; margin-bottom:1.5rem; align-items:center; }
+    .search-input { flex:1; font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:0.6rem 1rem;
+      border:1.5px solid var(--bege-escuro); border-radius:10px; background:#fff; outline:none;
+      transition:border-color 0.2s; }
+    .search-input:focus { border-color:var(--verde-claro); }
+
+    /* PATIENT LIST */
+    .patient-list { display:flex; flex-direction:column; gap:0.8rem; }
+    .patient-card {
+      background:#fff; border-radius:14px; padding:1.2rem 1.4rem;
+      box-shadow:0 2px 10px var(--sombra); border:1.5px solid transparent;
+      cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:1rem;
+    }
+    .patient-card:hover { border-color:var(--verde-claro); transform:translateY(-1px); box-shadow:0 6px 18px var(--sombra); }
+    .patient-card.selected { border-color:var(--verde-medio); background:var(--verde-suave); }
+    .avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--verde-claro),var(--verde-medio));
+      display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; color:#fff; font-weight:600; }
+    .patient-info { flex:1; min-width:0; }
+    .patient-info h3 { font-size:0.95rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .patient-info p { font-size:0.78rem; color:var(--cinza); margin-top:0.15rem; }
+    .patient-meta { display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem; flex-shrink:0; }
+    .tag { font-size:0.72rem; padding:0.2rem 0.6rem; border-radius:50px; font-weight:500; }
+    .tag-objetivo { background:#e8f5e9; color:#2e7d32; }
+    .tag-date { background:var(--bege-escuro); color:var(--cinza); }
+
+    /* EMPTY STATE */
+    .empty-state { text-align:center; padding:4rem 2rem; color:var(--cinza); }
+    .empty-state .icon { font-size:3rem; display:block; margin-bottom:1rem; opacity:0.4; }
+    .empty-state h3 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--texto); margin-bottom:0.5rem; }
+    .empty-state p { font-size:0.88rem; }
+
+    /* MODAL OVERLAY */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; align-items:center; justify-content:center; padding:1rem; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:20px; max-width:720px; width:100%; max-height:90vh; overflow-y:auto;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:modalIn 0.25s ease; }
+    @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+    .modal-header { padding:1.8rem 2rem 1.2rem; display:flex; align-items:flex-start; justify-content:space-between;
+      border-bottom:1px solid var(--bege-escuro); position:sticky; top:0; background:#fff; border-radius:20px 20px 0 0; }
+    .modal-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--verde-escuro); }
+    .modal-header p { font-size:0.8rem; color:var(--cinza); margin-top:0.3rem; }
+    .modal-close { background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--cinza); padding:0.2rem; line-height:1; }
+    .modal-close:hover { color:var(--vermelho); }
+    .modal-body { padding:1.5rem 2rem 2rem; }
+    .modal-actions { display:flex; gap:0.7rem; flex-wrap:wrap; padding:0 2rem 1.5rem; }
+
+    /* SUMMARY SECTIONS */
+    .summary-section { margin-bottom:1.4rem; }
+    .summary-section h4 { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--marrom);
+      font-weight:600; margin-bottom:0.7rem; display:flex; align-items:center; gap:0.4rem; }
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+    .summary-item { background:var(--bege); border-radius:10px; padding:0.6rem 0.8rem; }
+    .summary-item .key { font-size:0.72rem; color:var(--cinza); margin-bottom:0.2rem; }
+    .summary-item .val { font-size:0.88rem; font-weight:500; color:var(--texto); }
+    .summary-item.full { grid-column:1/-1; }
+    .tags-row { display:flex; flex-wrap:wrap; gap:0.4rem; }
+    .tag-pill { font-size:0.78rem; padding:0.25rem 0.7rem; border-radius:50px; background:var(--verde-suave); color:var(--verde-escuro); font-weight:500; }
+    .tag-pill.alert { background:#fff3e0; color:#e65100; }
+    .bmi-bar-wrap { height:8px; background:var(--bege-escuro); border-radius:50px; margin-top:0.4rem; overflow:hidden; }
+    .bmi-bar { height:100%; border-radius:50px; transition:width 0.6s ease; }
+    .divider { border:none; border-top:1px dashed var(--bege-escuro); margin:1rem 0; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span class="icon">🌿</span>
+    <h2>NutriConsulta</h2>
+    <p>Painel da Nutricionista</p>
+  </div>
+  <hr class="sidebar-divider"/>
+  <div class="sidebar-label">Visão geral</div>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="num" id="statTotal">0</div><div class="lbl">Pacientes</div></div>
+    <div class="stat-box"><div class="num" id="statHoje">0</div><div class="lbl">Hoje</div></div>
+    <div class="stat-box"><div class="num" id="statPerda">0</div><div class="lbl">Perda peso</div></div>
+    <div class="stat-box"><div class="num" id="statGanho">0</div><div class="lbl">Ganho massa</div></div>
+  </div>
+  <hr class="sidebar-divider" style="margin-top:auto"/>
+  <a href="anamnese.html" style="display:block;text-align:center;background:rgba(130,176,85,0.2);color:var(--verde-claro);
+    font-size:0.82rem;padding:0.6rem;border-radius:10px;text-decoration:none;font-weight:500;">
+    ➕ Ver formulário do paciente
+  </a>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h1>Fichas de Pacientes</h1>
+      <p>Clique em um paciente para ver o resumo completo</p>
+    </div>
+    <button class="btn btn-danger" onclick="clearAll()" style="font-size:0.78rem;">🗑 Limpar dados</button>
+  </div>
+
+  <div class="search-bar">
+    <input class="search-input" type="text" id="searchInput" placeholder="🔍  Buscar paciente por nome..." oninput="renderList()"/>
+  </div>
+
+  <div class="patient-list" id="patientList"></div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalName">—</h2>
+        <p id="modalSubtitle">—</p>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+      <button class="btn btn-danger" onclick="deletePatient()">🗑 Excluir ficha</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+  let currentPatient = null;
+  let currentIndex = null;
+
+  function getPatients() { return JSON.parse(localStorage.getItem('pacientes') || '[]'); }
+  function savePatients(arr) { localStorage.setItem('pacientes', JSON.stringify(arr)); }
+
+  function calcAge(dob) {
+    if (!dob) return '—';
+    const today = new Date(), birth = new Date(dob);
+    let age = today.getFullYear() - birth.getFullYear();
+    if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--;
+    return age + ' anos';
+  }
+
+  function calcBMI(peso, altura) {
+    if (!peso || !altura) return null;
+    const h = altura / 100;
+    return (peso / (h * h)).toFixed(1);
+  }
+
+  function bmiCategory(bmi) {
+    if (!bmi) return '';
+    if (bmi < 18.5) return 'Abaixo do peso';
+    if (bmi < 25)   return 'Peso normal';
+    if (bmi < 30)   return 'Sobrepeso';
+    return 'Obesidade';
+  }
+
+  function bmiColor(bmi) {
+    if (!bmi) return '#ccc';
+    if (bmi < 18.5) return '#5dade2';
+    if (bmi < 25)   return '#58d68d';
+    if (bmi < 30)   return '#f39c12';
+    return '#e74c3c';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+
+  function formatArr(arr) {
+    if (!arr || arr.length === 0) return '—';
+    return Array.isArray(arr) ? arr.join(', ') : arr;
+  }
+
+  function updateStats() {
+    const p = getPatients();
+    const hoje = new Date().toDateString();
+    document.getElementById('statTotal').textContent = p.length;
+    document.getElementById('statHoje').textContent  = p.filter(x => new Date(x.dataEnvio).toDateString() === hoje).length;
+    document.getElementById('statPerda').textContent = p.filter(x => x.objetivo === 'Perda de peso').length;
+    document.getElementById('statGanho').textContent = p.filter(x => x.objetivo === 'Ganho de massa').length;
+  }
+
+  function renderList() {
+    const patients = getPatients();
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const list = document.getElementById('patientList');
+    const filtered = patients.filter(p => (p.nome || '').toLowerCase().includes(query));
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <span class="icon">🌿</span>
+        <h3>${patients.length === 0 ? 'Nenhuma ficha ainda' : 'Nenhum resultado'}</h3>
+        <p>${patients.length === 0 ? 'As fichas enviadas pelo formulário aparecerão aqui.' : 'Tente buscar por outro nome.'}</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map((p, i) => {
+      const realIdx = patients.indexOf(p);
+      const initials = (p.nome || '?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+      const bmi = calcBMI(p.peso, p.altura);
+      return `<div class="patient-card" onclick="openPatient(${realIdx})">
+        <div class="avatar">${initials}</div>
+        <div class="patient-info">
+          <h3>${p.nome || '—'}</h3>
+          <p>${calcAge(p.nascimento)} · ${p.sexo || '—'} · ${bmi ? 'IMC ' + bmi : 'Sem medidas'}</p>
+        </div>
+        <div class="patient-meta">
+          <span class="tag tag-objetivo">${p.objetivo || 'Sem objetivo'}</span>
+          <span class="tag tag-date">${formatDate(p.dataEnvio)}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    updateStats();
+  }
+
+  function openPatient(idx) {
+    const patients = getPatients();
+    const p = patients[idx];
+    currentPatient = p;
+    currentIndex = idx;
+
+    const bmi = calcBMI(p.peso, p.altura);
+    const bmiCat = bmiCategory(bmi);
+    const bmiPct = bmi ? Math.min(100, ((bmi - 10) / 30) * 100) : 0;
+
+    document.getElementById('modalName').textContent = p.nome || '—';
+    document.getElementById('modalSubtitle').textContent = `Ficha enviada em ${formatDate(p.dataEnvio)} · ${calcAge(p.nascimento)} · ${p.sexo || '—'}`;
+
+    document.getElementById('modalBody').innerHTML = `
+      <div class="summary-section">
+        <h4>📋 Identificação</h4>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="key">Nome</div><div class="val">${p.nome || '—'}</div></div>
+          <div class="summary-item"><div class="key">Nascimento</div><div class="val">${p.nascimento ? new Date(p.nascimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</div></div>
+          <div class="summary-item"><div class="key">Telefone</div><div class="val">${p.telefone || '—'}</div></div>
+          <div class="summary-item"><div class="key">E-mail</div><div class="val">${p.email || '—'}</div></div>
+          <div class="summary-item"><div class="key">Profissão</div><div class="val">${p.profissao || '—'}</div></div>
+          <div class="summary-item"><div class="key">Acomp. anterior</div><div class="val">${p.acomp_anterior || '—'}</div></div>
+        </div>
+      </div>
+      <hr class="divider"/>
+
+      <div class="summary-section">
+        <h4>📏 Medidas & IMC</h4>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="key">Peso</div><div class="val">${p.peso ? p.peso + ' kg' : '—'}</div></div>
+          <div class="summary-item"><div class="key">Altura</div><div class="val">${p.altura ? p.altura + ' cm' : '—'}</div></div>
+          <div class="summary-item"><div class="key">Circ. abdominal</div><div class="val">${p.cintura ? p.cintura + ' cm' : '—'}</div></div>
+          <div class="summary-item">
+            <div class="key">IMC</div>
+            <div class="val" style="color:${bmiColor(bmi)}">${bmi ? bmi + ' — ' + bmiCat : '—'}</div>
+            ${bmi ? `<div class="bmi-bar-wrap"><div class="bmi-bar" style="width:${bmiPct}%;background:${bmiColor(bmi)}"></div></div>` : ''}
+          </div>
+        </div>
+      </div>
+      <hr class="divider"/>
+
+      <div class="summary-section">
+        <h4>🎯 Objetivo</h4>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="key">Objetivo principal</div><div class="val">${p.objetivo || '—'}</div></div>
+          <div class="summary-item full"><div class="key">Descrição</div><div class="val">${p.objetivo_desc || '—'}</div></div>
+        </div>
+      </div>
+      <hr class="divider"/>
+
+      <div class="summary-section">
+        <h4>🩺 Saúde</h4>
+        <div class="summary-grid">
+          <div class="summary-item full">
+            <div class="key">Condições diagnosticadas</div>
+            <div class="tags-row" style="margin-top:0.4rem">
+              ${(Array.isArray(p.condicao) ? p.condicao : [p.condicao]).filter(Boolean).map(c => `<span class="tag-pill ${c !== 'Nenhuma' ? 'alert' : ''}">${c}</span>`).join('') || '<span class="tag-pill">—</span>'}
+            </div>
+          </div>
+          <div class="summary-item"><div class="key">Medicamentos</div><div class="val">${p.medicamentos || '—'}</div></div>
+          <div class="summary-item"><div class="key">Suplementos</div><div class="val">${p.suplementos || '—'}</div></div>
+        </div>
+      </div>
+      <hr class="divider"/>
+
+      <div class="summary-section">
+        <h4>🍽️ Alimentação</h4>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="key">Refeições/dia</div><div class="val">${p.refeicoes || '—'}</div></div>
+          <div class="summary-item"><div class="key">Pula refeições</div><div class="val">${p.pula_refeicoes || '—'}</div></div>
+          <div class="summary-item full">
+            <div class="key">Restrições/alergias</div>
+            <div class="tags-row" style="margin-top:0.4rem">
+              ${(Array.isArray(p.restricao) ? p.restricao : [p.restricao]).filter(Boolean).map(r => `<span class="tag-pill ${r !== 'Nenhuma' ? 'alert' : ''}">${r}</span>`).join('') || '<span class="tag-pill">—</span>'}
+            </div>
+          </div>
+          <div class="summary-item full">
+            <div class="key">Padrão alimentar</div>
+            <div class="tags-row" style="margin-top:0.4rem">
+              ${(Array.isArray(p.dieta) ? p.dieta : [p.dieta]).filter(Boolean).map(d => `<span class="tag-pill">${d}</span>`).join('') || '<span class="tag-pill">—</span>'}
+            </div>
+          </div>
+          <div class="summary-item full"><div class="key">Dia típico</div><div class="val">${p.dia_tipico || '—'}</div></div>
+        </div>
+      </div>
+      <hr class="divider"/>
+
+      <div class="summary-section">
+        <h4>💧 Estilo de Vida</h4>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="key">Água por dia</div><div class="val">${p.agua || '—'}</div></div>
+          <div class="summary-item"><div class="key">Atividade física</div><div class="val">${p.atividade || '—'}</div></div>
+          <div class="summary-item"><div class="key">Sono</div><div class="val">${p.sono || '—'}</div></div>
+          <div class="summary-item"><div class="key">Álcool</div><div class="val">${p.alcool || '—'}</div></div>
+          <div class="summary-item"><div class="key">Nível de estresse</div><div class="val">${p.estresse ? p.estresse + '/10' : '—'}</div></div>
+        </div>
+      </div>
+
+      ${p.obs ? `<hr class="divider"/><div class="summary-section">
+        <h4>📝 Observações</h4>
+        <div class="summary-item full"><div class="val">${p.obs}</div></div>
+      </div>` : ''}
+    `;
+
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function closeModalOnBg(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+  function deletePatient() {
+    if (!confirm('Excluir ficha de ' + currentPatient.nome + '?')) return;
+    const patients = getPatients();
+    patients.splice(currentIndex, 1);
+    savePatients(patients);
+    closeModal();
+    renderList();
+    updateStats();
+  }
+
+  function clearAll() {
+    if (!confirm('Apagar TODAS as fichas? Esta ação não pode ser desfeita.')) return;
+    localStorage.removeItem('pacientes');
+    renderList(); updateStats();
+  }
+
+  function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const p = currentPatient;
+    const bmi = calcBMI(p.peso, p.altura);
+    let y = 20;
+
+    const addLine = (label, value, indent=false) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.setTextColor(74, 124, 47);
+      doc.text((indent ? '    ' : '') + label + ':', 15, y);
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(40, 40, 40);
+      const lines = doc.splitTextToSize(String(value || '—'), 140);
+      doc.text(lines, indent ? 55 : 55, y);
+      y += Math.max(6, lines.length * 5.5);
+    };
+
+    const addSection = (title) => {
+      if (y > 260) { doc.addPage(); y = 20; }
+      y += 4;
+      doc.setFillColor(232, 243, 222); doc.roundedRect(12, y-4, 186, 9, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 58, 15);
+      doc.text(title, 15, y + 1.5); y += 10;
+      doc.setTextColor(40, 40, 40);
+    };
+
+    // Header
+    doc.setFillColor(30, 58, 15); doc.rect(0, 0, 210, 28, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+    doc.text('Ficha de Anamnese Nutricional', 15, 12);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(168, 201, 127);
+    doc.text('Gerado em ' + new Date().toLocaleDateString('pt-BR'), 15, 20);
+    y = 38;
+
+    addSection('IDENTIFICAÇÃO');
+    addLine('Nome', p.nome); addLine('Nascimento', p.nascimento ? new Date(p.nascimento + 'T12:00:00').toLocaleDateString('pt-BR') : '—');
+    addLine('Idade', calcAge(p.nascimento)); addLine('Sexo', p.sexo);
+    addLine('Telefone', p.telefone); addLine('E-mail', p.email); addLine('Profissão', p.profissao);
+
+    addSection('MEDIDAS CORPORAIS');
+    addLine('Peso', p.peso ? p.peso + ' kg' : '—'); addLine('Altura', p.altura ? p.altura + ' cm' : '—');
+    addLine('Circ. Abdominal', p.cintura ? p.cintura + ' cm' : '—');
+    if (bmi) addLine('IMC calculado', bmi + ' — ' + bmiCategory(bmi));
+
+    addSection('OBJETIVO');
+    addLine('Principal', p.objetivo); addLine('Descrição', p.objetivo_desc);
+
+    addSection('HISTÓRICO DE SAÚDE');
+    addLine('Condições', formatArr(p.condicao)); addLine('Medicamentos', p.medicamentos); addLine('Suplementos', p.suplementos);
+
+    addSection('HÁBITOS ALIMENTARES');
+    addLine('Refeições/dia', p.refeicoes); addLine('Pula refeições', p.pula_refeicoes);
+    addLine('Restrições', formatArr(p.restricao)); addLine('Padrão', formatArr(p.dieta));
+    addLine('Dia típico', p.dia_tipico);
+
+    addSection('ESTILO DE VIDA');
+    addLine('Água/dia', p.agua); addLine('Atividade física', p.atividade);
+    addLine('Sono', p.sono); addLine('Álcool', p.alcool);
+    addLine('Estresse', p.estresse ? p.estresse + '/10' : '—');
+
+    if (p.obs) { addSection('OBSERVAÇÕES'); addLine('Obs.', p.obs); }
+
+    // Footer
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(160,160,160);
+    doc.text('Documento gerado pelo sistema NutriConsulta · Confidencial', 15, 288);
+
+    doc.save(`anamnese_${(p.nome||'paciente').replace(/\s+/g,'_')}.pdf`);
+  }
+
+  // Init
+  renderList(); updateStats();
+  window.addEventListener('storage', () => { renderList(); updateStats(); });
+</script>
+</body>
+</html>

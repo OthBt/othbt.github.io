@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ficha de Anamnese Nutricional</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde-escuro: #2d5016; --verde-medio: #4a7c2f; --verde-claro: #a8c97f;
+      --bege: #f5f0e8; --bege-escuro: #e8dfc8; --marrom: #6b4c2a;
+      --texto: #2a2a2a; --cinza: #7a7a7a; --branco: #fefefe;
+      --sombra: rgba(45,80,22,0.12);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif; background-color: var(--bege);
+      color: var(--texto); min-height: 100vh; padding: 2rem 1rem 4rem;
+      background-image: radial-gradient(ellipse at 10% 20%, rgba(168,201,127,0.18) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 80%, rgba(107,76,42,0.08) 0%, transparent 50%);
+    }
+    .page-wrapper { max-width: 780px; margin: 0 auto; }
+    .header { text-align: center; padding: 2.5rem 2rem 2rem; margin-bottom: 2rem; }
+    .header::after { content:''; display:block; width:80px; height:3px;
+      background:linear-gradient(90deg,var(--verde-medio),var(--verde-claro));
+      margin:1.2rem auto 0; border-radius:2px; }
+    .logo-icon { font-size:2.8rem; margin-bottom:0.6rem; display:block; }
+    .header h1 { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--verde-escuro); }
+    .header p { margin-top:0.5rem; font-size:0.9rem; color:var(--cinza); font-weight:300; }
+    .card { background:var(--branco); border-radius:18px; padding:2rem 2.2rem; margin-bottom:1.4rem;
+      box-shadow:0 4px 20px var(--sombra),0 1px 4px rgba(0,0,0,0.04);
+      border:1px solid rgba(168,201,127,0.25); animation:fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .section-title { font-family:'Playfair Display',serif; font-size:1.15rem; color:var(--verde-escuro);
+      margin-bottom:1.4rem; display:flex; align-items:center; gap:0.6rem; }
+    .section-title span.icon { font-size:1.1rem; background:linear-gradient(135deg,var(--verde-claro),var(--bege-escuro));
+      border-radius:8px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+    .full { grid-column:1/-1; }
+    @media(max-width:560px){ .grid-2,.grid-3{grid-template-columns:1fr} .card{padding:1.4rem 1.2rem} .header h1{font-size:1.6rem} }
+    .field { display:flex; flex-direction:column; gap:0.35rem; }
+    label { font-size:0.8rem; font-weight:500; color:var(--marrom); letter-spacing:0.03em; text-transform:uppercase; }
+    input[type="text"],input[type="date"],input[type="number"],input[type="email"],input[type="tel"],select,textarea {
+      font-family:'DM Sans',sans-serif; font-size:0.93rem; padding:0.65rem 0.9rem;
+      border:1.5px solid var(--bege-escuro); border-radius:10px; background:var(--bege);
+      color:var(--texto); transition:border-color 0.2s,box-shadow 0.2s,background 0.2s; outline:none; width:100%; }
+    input:focus,select:focus,textarea:focus { border-color:var(--verde-claro); background:#fff; box-shadow:0 0 0 3px rgba(168,201,127,0.2); }
+    textarea { resize:vertical; min-height:80px; line-height:1.5; }
+    select { cursor:pointer; appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b4c2a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center; padding-right:2rem; }
+    .check-group { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.2rem; }
+    .check-item { display:flex; align-items:center; gap:0.4rem; background:var(--bege);
+      border:1.5px solid var(--bege-escuro); border-radius:8px; padding:0.4rem 0.8rem;
+      cursor:pointer; font-size:0.88rem; transition:all 0.18s; user-select:none; }
+    .check-item:hover { border-color:var(--verde-claro); background:#f0f7e8; }
+    .check-item input[type="checkbox"],.check-item input[type="radio"] {
+      width:16px; height:16px; accent-color:var(--verde-medio); cursor:pointer; flex-shrink:0; border:none; padding:0; }
+    .scale-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.3rem; }
+    .scale-btn { width:38px; height:38px; border-radius:10px; border:1.5px solid var(--bege-escuro);
+      background:var(--bege); font-size:0.85rem; font-family:'DM Sans',sans-serif; font-weight:500;
+      cursor:pointer; transition:all 0.15s; color:var(--texto); }
+    .scale-btn:hover,.scale-btn.active { background:var(--verde-medio); border-color:var(--verde-medio); color:#fff; transform:scale(1.05); }
+    .scale-labels { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--cinza); margin-top:0.3rem; }
+    .divider { border:none; border-top:1px dashed var(--bege-escuro); margin:1.2rem 0; }
+    .submit-area { text-align:center; padding:1rem 0 0; }
+    .btn-submit { font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:500; padding:0.9rem 3rem;
+      background:linear-gradient(135deg,var(--verde-escuro),var(--verde-medio)); color:#fff; border:none;
+      border-radius:50px; cursor:pointer; box-shadow:0 6px 20px rgba(45,80,22,0.3); transition:transform 0.2s,box-shadow 0.2s; }
+    .btn-submit:hover { transform:translateY(-2px); box-shadow:0 10px 26px rgba(45,80,22,0.38); }
+    #success-msg { display:none; text-align:center; padding:2.5rem 2rem; background:var(--branco);
+      border-radius:18px; box-shadow:0 4px 20px var(--sombra); border:1px solid rgba(168,201,127,0.3); }
+    #success-msg .big-icon { font-size:3rem; display:block; margin-bottom:1rem; }
+    #success-msg h2 { font-family:'Playfair Display',serif; color:var(--verde-escuro); font-size:1.5rem; margin-bottom:0.5rem; }
+    #success-msg p { color:var(--cinza); font-size:0.93rem; }
+    .progress-bar-wrap { background:var(--bege-escuro); border-radius:50px; height:6px; margin-bottom:2rem; overflow:hidden; }
+    .progress-bar-fill { height:100%; border-radius:50px; background:linear-gradient(90deg,var(--verde-medio),var(--verde-claro)); width:0%; transition:width 0.4s ease; }
+    .required { color:#c0392b; margin-left:2px; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="header">
+    <span class="logo-icon">🥦</span>
+    <h1>Ficha de Anamnese Nutricional</h1>
+    <p>Preencha com cuidado — suas respostas orientam todo o seu atendimento.</p>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+  <form id="anamneseForm" novalidate>
+    <div class="card">
+      <div class="section-title"><span class="icon">👤</span> Identificação</div>
+      <div class="grid-2">
+        <div class="field full"><label>Nome completo <span class="required">*</span></label><input type="text" name="nome" placeholder="Seu nome completo" required /></div>
+        <div class="field"><label>Data de nascimento <span class="required">*</span></label><input type="date" name="nascimento" required /></div>
+        <div class="field"><label>Sexo biológico <span class="required">*</span></label>
+          <select name="sexo" required><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></div>
+        <div class="field"><label>Telefone / WhatsApp</label><input type="tel" name="telefone" placeholder="(00) 90000-0000" /></div>
+        <div class="field"><label>E-mail</label><input type="email" name="email" placeholder="seu@email.com" /></div>
+        <div class="field"><label>Profissão</label><input type="text" name="profissao" placeholder="Sua ocupação atual" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="icon">📏</span> Medidas Corporais</div>
+      <div class="grid-3">
+        <div class="field"><label>Peso atual (kg)</label><input type="number" name="peso" min="20" max="300" step="0.1" placeholder="ex: 68.5" /></div>
+        <div class="field"><label>Altura (cm)</label><input type="number" name="altura" min="100" max="250" placeholder="ex: 165" /></div>
+        <div class="field"><label>Circ. abdominal (cm)</label><input type="number" name="cintura" min="40" max="200" placeholder="ex: 82" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="icon">🎯</span> Objetivo com o Acompanhamento</div>
+      <div class="field" style="margin-bottom:1rem;">
+        <label>Principal objetivo <span class="required">*</span></label>
+        <div class="check-group">
+          <label class="check-item"><input type="radio" name="objetivo" value="Perda de peso" required> Perda de peso</label>
+          <label class="check-item"><input type="radio" name="objetivo" value="Ganho de massa"> Ganho de massa</label>
+          <label class="check-item"><input type="radio" name="objetivo" value="Reeducação alimentar"> Reeducação alimentar</label>
+          <label class="check-item"><input type="radio" name="objetivo" value="Controle de doença"> Controle de doença</label>
+          <label class="check-item"><input type="radio" name="objetivo" value="Saúde geral"> Saúde geral</label>
+          <label class="check-item"><input type="radio" name="objetivo" value="Outro"> Outro</label>
+        </div>
+      </div>
+      <div class="field"><label>Descreva com suas palavras</label>
+        <textarea name="objetivo_desc" placeholder="Ex: quero ter mais energia no dia a dia e perder cerca de 8 kg..."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="icon">🩺</span> Histórico de Saúde</div>
+      <div class="field" style="margin-bottom:1rem;">
+        <label>Condições de saúde diagnosticadas</label>
+        <div class="check-group">
+          <label class="check-item"><input type="checkbox" name="condicao" value="Diabetes"> Diabetes</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="Hipertensão"> Hipertensão</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="Colesterol alto"> Colesterol alto</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="Hipotireoidismo"> Hipotireoidismo</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="Hipertireoidismo"> Hipertireoidismo</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="SII"> SII / Intestino irritável</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="SOPK"> SOP / SOPK</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="Nenhuma"> Nenhuma</label>
+          <label class="check-item"><input type="checkbox" name="condicao" value="Outra"> Outra</label>
+        </div>
+      </div>
+      <hr class="divider"/>
+      <div class="field" style="margin-bottom:1rem;"><label>Medicamentos de uso contínuo</label>
+        <textarea name="medicamentos" placeholder="Nome e dose. Ex: Metformina 500mg..."></textarea></div>
+      <div class="field"><label>Suplementos em uso</label>
+        <input type="text" name="suplementos" placeholder="Ex: Whey protein, Vitamina D..." /></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="icon">🍽️</span> Hábitos Alimentares</div>
+      <div class="grid-2" style="margin-bottom:1rem;">
+        <div class="field"><label>Refeições por dia</label>
+          <select name="refeicoes"><option value="">Selecione</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5 ou mais</option></select></div>
+        <div class="field"><label>Pula refeições?</label>
+          <select name="pula_refeicoes"><option value="">Selecione</option><option>Nunca</option><option>Raramente</option><option>Às vezes</option><option>Com frequência</option></select></div>
+      </div>
+      <div class="field" style="margin-bottom:1rem;">
+        <label>Restrições ou alergias alimentares</label>
+        <div class="check-group">
+          <label class="check-item"><input type="checkbox" name="restricao" value="Glúten"> Glúten</label>
+          <label class="check-item"><input type="checkbox" name="restricao" value="Lactose"> Lactose</label>
+          <label class="check-item"><input type="checkbox" name="restricao" value="Frutos do mar"> Frutos do mar</label>
+          <label class="check-item"><input type="checkbox" name="restricao" value="Amendoim"> Amendoim</label>
+          <label class="check-item"><input type="checkbox" name="restricao" value="Ovo"> Ovo</label>
+          <label class="check-item"><input type="checkbox" name="restricao" value="Nenhuma"> Nenhuma</label>
+          <label class="check-item"><input type="checkbox" name="restricao" value="Outra"> Outra</label>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:1rem;">
+        <label>Padrão alimentar</label>
+        <div class="check-group">
+          <label class="check-item"><input type="checkbox" name="dieta" value="Vegetariana"> Vegetariana</label>
+          <label class="check-item"><input type="checkbox" name="dieta" value="Vegana"> Vegana</label>
+          <label class="check-item"><input type="checkbox" name="dieta" value="Low carb"> Low carb</label>
+          <label class="check-item"><input type="checkbox" name="dieta" value="Cetogênica"> Cetogênica</label>
+          <label class="check-item"><input type="checkbox" name="dieta" value="Sem restrições"> Sem restrições</label>
+        </div>
+      </div>
+      <div class="field"><label>Dia alimentar típico</label>
+        <textarea name="dia_tipico" rows="4" placeholder="Ex — Café: pão com manteiga. Almoço: arroz, feijão, frango. Jantar: sopa..."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="icon">💧</span> Estilo de Vida</div>
+      <div class="grid-2" style="margin-bottom:1.2rem;">
+        <div class="field"><label>Consumo de água por dia</label>
+          <select name="agua"><option value="">Selecione</option><option>Menos de 1 litro</option><option>1 a 1,5 litros</option><option>1,5 a 2 litros</option><option>2 a 2,5 litros</option><option>Mais de 2,5 litros</option></select></div>
+        <div class="field"><label>Atividade física</label>
+          <select name="atividade"><option value="">Selecione</option><option>Não pratico</option><option>1–2x por semana</option><option>3–4x por semana</option><option>5+ vezes por semana</option></select></div>
+        <div class="field"><label>Qualidade do sono</label>
+          <select name="sono"><option value="">Selecione</option><option>Ruim (menos de 5h)</option><option>Regular (5–6h)</option><option>Bom (7–8h)</option><option>Ótimo (mais de 8h)</option></select></div>
+        <div class="field"><label>Consumo de álcool</label>
+          <select name="alcool"><option value="">Selecione</option><option>Não consumo</option><option>Raramente</option><option>Finais de semana</option><option>Frequentemente</option></select></div>
+      </div>
+      <div class="field">
+        <label>Nível de estresse (1–10)</label>
+        <div class="scale-row" id="stressScale">
+          <button type="button" class="scale-btn" data-val="1">1</button><button type="button" class="scale-btn" data-val="2">2</button>
+          <button type="button" class="scale-btn" data-val="3">3</button><button type="button" class="scale-btn" data-val="4">4</button>
+          <button type="button" class="scale-btn" data-val="5">5</button><button type="button" class="scale-btn" data-val="6">6</button>
+          <button type="button" class="scale-btn" data-val="7">7</button><button type="button" class="scale-btn" data-val="8">8</button>
+          <button type="button" class="scale-btn" data-val="9">9</button><button type="button" class="scale-btn" data-val="10">10</button>
+        </div>
+        <div class="scale-labels"><span>Sem estresse</span><span>Estresse extremo</span></div>
+        <input type="hidden" name="estresse" id="estresseInput" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="icon">📝</span> Informações Complementares</div>
+      <div class="field" style="margin-bottom:1rem;">
+        <label>Já fez acompanhamento nutricional antes?</label>
+        <div class="check-group">
+          <label class="check-item"><input type="radio" name="acomp_anterior" value="Sim"> Sim</label>
+          <label class="check-item"><input type="radio" name="acomp_anterior" value="Não"> Não</label>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:1rem;"><label>Como soube do consultório?</label>
+        <select name="indicacao"><option value="">Selecione</option><option>Indicação de amigo/familiar</option><option>Redes sociais</option><option>Google / internet</option><option>Médico ou profissional</option><option>Outros</option></select></div>
+      <div class="field"><label>Informações adicionais</label>
+        <textarea name="obs" placeholder="Conte o que achar relevante..."></textarea></div>
+    </div>
+
+    <div class="submit-area">
+      <button type="submit" class="btn-submit">✅ Enviar Ficha</button>
+      <p style="margin-top:0.8rem;font-size:0.78rem;color:var(--cinza);">Seus dados são confidenciais e utilizados apenas para fins de atendimento.</p>
+    </div>
+  </form>
+
+  <div id="success-msg">
+    <span class="big-icon">🌿</span>
+    <h2>Ficha recebida com sucesso!</h2>
+    <p>Obrigada por preencher suas informações.<br/>Sua nutricionista já pode preparar o melhor plano para você.</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('#stressScale .scale-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#stressScale .scale-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('estresseInput').value = btn.dataset.val;
+    });
+  });
+
+  function updateProgress() {
+    const required = document.querySelectorAll('[required]');
+    const radioGroups = [...new Set([...document.querySelectorAll('[required][type=radio]')].map(r => r.name))];
+    let filled = 0;
+    document.querySelectorAll('[required]:not([type=radio])').forEach(el => { if(el.value.trim()) filled++; });
+    radioGroups.forEach(name => { if(document.querySelector(`[name="${name}"]:checked`)) filled++; });
+    const total = document.querySelectorAll('[required]:not([type=radio])').length + radioGroups.length;
+    document.getElementById('progressFill').style.width = Math.min(100, Math.round((filled/total)*100)) + '%';
+  }
+
+  document.getElementById('anamneseForm').addEventListener('input', updateProgress);
+  document.getElementById('anamneseForm').addEventListener('change', updateProgress);
+
+  document.getElementById('anamneseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nome = document.querySelector('[name="nome"]').value.trim();
+    const nasc = document.querySelector('[name="nascimento"]').value;
+    const sexo = document.querySelector('[name="sexo"]').value;
+    const obj  = document.querySelector('[name="objetivo"]:checked');
+    if (!nome || !nasc || !sexo || !obj) { alert('Preencha os campos obrigatórios antes de enviar.'); return; }
+
+    // Collect all form data
+    const data = { id: Date.now(), dataEnvio: new Date().toISOString() };
+    const fd = new FormData(this);
+
+    // checkboxes (multiple values)
+    const multiFields = ['condicao','restricao','dieta'];
+    multiFields.forEach(f => { data[f] = []; });
+
+    for (const [key, value] of fd.entries()) {
+      if (multiFields.includes(key)) { data[key].push(value); }
+      else { data[key] = value; }
+    }
+
+    // Save to localStorage
+    const existing = JSON.parse(localStorage.getItem('pacientes') || '[]');
+    existing.push(data);
+    localStorage.setItem('pacientes', JSON.stringify(existing));
+
+    document.getElementById('anamneseForm').style.display = 'none';
+    document.querySelector('.progress-bar-wrap').style.display = 'none';
+    const msg = document.getElementById('success-msg');
+    msg.style.display = 'block';
+    msg.scrollIntoView({ behavior: 'smooth' });
+  });
+</script>
+</body>
+</html>
