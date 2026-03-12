@@ -240,6 +240,9 @@
 </div>
 
 <script>
+  // COLOQUE SUA URL AQUI:
+  const urlScript = 'COLE_AQUI_SUA_URL_DO_GOOGLE_SCRIPT';
+
   document.querySelectorAll('#stressScale .scale-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#stressScale .scale-btn').forEach(b => b.classList.remove('active'));
@@ -269,29 +272,28 @@
     const obj  = document.querySelector('[name="objetivo"]:checked');
     if (!nome || !nasc || !sexo || !obj) { alert('Preencha os campos obrigatórios antes de enviar.'); return; }
 
-    // Collect all form data
-    const data = { id: Date.now(), dataEnvio: new Date().toISOString() };
-    const fd = new FormData(this);
+    const btn = document.querySelector('.btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
 
-    // checkboxes (multiple values)
-    const multiFields = ['condicao','restricao','dieta'];
-    multiFields.forEach(f => { data[f] = []; });
-
-    for (const [key, value] of fd.entries()) {
-      if (multiFields.includes(key)) { data[key].push(value); }
-      else { data[key] = value; }
-    }
-
-    // Save to localStorage
-    const existing = JSON.parse(localStorage.getItem('pacientes') || '[]');
-    existing.push(data);
-    localStorage.setItem('pacientes', JSON.stringify(existing));
-
-    document.getElementById('anamneseForm').style.display = 'none';
-    document.querySelector('.progress-bar-wrap').style.display = 'none';
-    const msg = document.getElementById('success-msg');
-    msg.style.display = 'block';
-    msg.scrollIntoView({ behavior: 'smooth' });
+    // Envia os dados para o Google Sheets
+    fetch(urlScript, {
+      method: 'POST',
+      body: new URLSearchParams(new FormData(this))
+    })
+    .then(() => {
+      document.getElementById('anamneseForm').style.display = 'none';
+      document.querySelector('.progress-bar-wrap').style.display = 'none';
+      const msg = document.getElementById('success-msg');
+      msg.style.display = 'block';
+      msg.scrollIntoView({ behavior: 'smooth' });
+    })
+    .catch(error => {
+      alert('Erro ao enviar dados. Tente novamente.');
+      console.error(error);
+      btn.disabled = false;
+      btn.textContent = '✅ Enviar Ficha';
+    });
   });
 </script>
 </body>
